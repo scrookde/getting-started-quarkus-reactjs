@@ -1,0 +1,220 @@
+openapi: 3.0.0
+info:
+  title: Order API
+  version: '1.0'
+  license: { name: 'MIT'}
+  description: ''
+servers:
+  - url: /api
+    description: ''
+paths:
+  /order:
+    get:
+      summary: Retrieve some orders
+      tags:
+        - order
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+      operationId: get-order
+      parameters:
+        - schema:
+            type: integer
+            format: int32
+            default: 1
+          in: query
+          name: page
+          description: ''
+        - schema:
+            type: integer
+            format: int32
+            default: 1
+          in: query
+          name: pageSize
+        - schema:
+            type: string
+            example: "customerReference='127';paymentMode='paypal'"
+            pattern: "([\\w.]+)([^']+?)('(?:.*?)'|[+-]?(?:[0-9]*[.])?[0-9]+)(?:;|$)"
+            default: ' '
+          in: query
+          name: query
+    post:
+      summary: 'Create an order'
+      operationId: post-order
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCreationResponse'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreationRequest'
+      tags:
+        - order
+  '/order/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Retrieve an order
+      tags:
+        - order
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Not Found
+      operationId: get-order-id
+      parameters: []
+  '/order/{id}/capture':
+    parameters:
+      - schema:
+          type: string
+        name: id
+        in: path
+        required: true
+    get:
+      summary: Capture an order
+      tags:
+        - order
+      responses:
+        '200':
+          description: OK
+        '304':
+          description: Not Modified
+      operationId: capture-order
+components:
+  schemas:
+    Order:
+      title: Order
+      type: object
+      x-tags:
+        - order
+      properties:
+        id:
+          type: string
+        paymentMode:
+          $ref: '#/components/schemas/PaymentMode'
+        status:
+          type: string
+          enum:
+            - CREATED
+            - PENDING_PAYMENT
+            - COMPLETED
+            - CANCELED
+        customerReference:
+          type: string
+        externalReference:
+          type: string
+        currency:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderEntry'
+    OrderEntry:
+      type: object
+      title: OrderEntry
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+        amount:
+          type: integer
+          format: int32
+    Product:
+      title: Product
+      type: object
+      x-tags:
+        - order
+      properties:
+        externalReference:
+          type: string
+        currency:
+          type: string
+          format: double
+        price:
+          type: number
+          format: double
+    OrderCreationResponse:
+      title: OrderCreationResponse
+      type: object
+      properties:
+        order:
+          $ref: '#/components/schemas/Order'
+        extra:
+          type: object
+          description: Represents a map
+    OrderCreationRequest:
+      title: OrderCreationRequest
+      type: object
+      x-examples: {}
+      properties:
+        customerReference:
+          type: string
+        currency:
+          type: string
+        paymentMode:
+          $ref: '#/components/schemas/PaymentMode'
+        returnUrl:
+          type: string
+        cancelUrl:
+          type: string
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderCreationRequestEntry'
+      required:
+        - customerReference
+        - currency
+        - paymentMode
+        - returnUrl
+        - cancelUrl
+        - entries
+    PaymentMode:
+      type: string
+      title: PaymentMode
+      enum:
+        - PAYPAL
+    OrderCreationRequestEntry:
+      title: OrderCreationRequestEntry
+      type: object
+      properties:
+        productReference:
+          type: string
+        amount:
+          type: integer
+          format: int32
+        currency:
+          type: string
+        price:
+          type: number
+          format: double
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - productReference
+        - amount
+        - currency
+        - price
+        - name
+        - description
+  securitySchemes: {}
